@@ -6,7 +6,7 @@ import (
 
 //goland:noinspection GoVetStructTag
 type AppConfig struct {
-	NodeId int8 `env:"NODE_ID" env-required`
+	NodeId uint8 `env:"NODE_ID" env-required`
 }
 
 func GetConfig() *AppConfig {
