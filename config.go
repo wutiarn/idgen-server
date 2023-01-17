@@ -1,23 +1,19 @@
 package main
 
 import (
-	"github.com/spf13/viper"
-	"strings"
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
+//goland:noinspection GoVetStructTag
 type AppConfig struct {
-	NodeId int8
+	NodeId int8 `env:"NODE_ID" env-required`
 }
 
 func GetConfig() *AppConfig {
-	replacer := strings.NewReplacer(".", "_")
-	viper.SetEnvKeyReplacer(replacer)
-	viper.SetEnvPrefix("IDGEN")
-	viper.AutomaticEnv()
 	config := AppConfig{
 		NodeId: 1,
 	}
-	err := viper.Unmarshal(&config)
+	err := cleanenv.ReadEnv(&config)
 	if err != nil {
 		panic(err)
 	}
