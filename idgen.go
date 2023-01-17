@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+const epochStart = uint64(1672531200) // 2023-01-01 00:00:00
 const timestampBits = 35
 const counterBits = 14
 const serverIdBits = 6
@@ -22,7 +23,7 @@ func GenerateId(domain uint8) int64 {
 
 func generateIdForParams(params idParams) int64 {
 	var id int64 = 0
-	id = encodePart(id, params.timestamp, timestampBits)
+	id = encodePart(id, params.timestamp-epochStart, timestampBits)
 	id = encodePart(id, params.counter, counterBits)
 	id = encodePart(id, params.serverId, serverIdBits)
 	id = encodePart(id, params.domain, domainBits)
@@ -36,6 +37,8 @@ func parseIdToParams(id int64) idParams {
 	result.serverId, id = extractPart(id, serverIdBits)
 	result.counter, id = extractPart(id, counterBits)
 	result.timestamp, id = extractPart(id, timestampBits)
+
+	result.timestamp = result.timestamp + epochStart
 
 	return result
 }

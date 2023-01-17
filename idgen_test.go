@@ -17,7 +17,7 @@ func TestGenerateId(t *testing.T) {
 
 	t.Run("Generate", func(t *testing.T) {
 		id = generateIdForParams(params)
-		var expected int64 = 449358206980867337
+		var expected int64 = 391531634640137
 		if id != expected {
 			t.Errorf("generateIdForParams returned %v, expected %v", id, expected)
 		}
@@ -32,15 +32,16 @@ func TestGenerateId(t *testing.T) {
 
 	t.Run("Generate timestamp overflow", func(t *testing.T) {
 		modifiedParams := params
-		modifiedParams.timestamp = 34359738371
+		overflowValue := uint64(10)
+		modifiedParams.timestamp = uint64(math.Pow(2, 35)) + epochStart + overflowValue
 		generated := generateIdForParams(modifiedParams)
-		var expected int64 = 805324041
+		var expected int64 = 2684372233
 		if generated != expected {
-			t.Errorf("generateIdForParams returned %v, expected %v", id, expected)
+			t.Errorf("generateIdForParams returned %v, expected %v", generated, expected)
 		}
 
 		parsedParams := parseIdToParams(generated)
-		modifiedParams.timestamp = modifiedParams.timestamp - uint64(math.Pow(2, 35))
+		modifiedParams.timestamp = overflowValue + epochStart
 		if parsedParams != modifiedParams {
 			t.Errorf("parseIdToParams returned %v, expected %v", parsedParams, modifiedParams)
 		}
