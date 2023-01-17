@@ -52,7 +52,7 @@ func TestGenerateId(t *testing.T) {
 
 func TestTimestampLifetime(t *testing.T) {
 	start := epochStart
-	end := epochStart + int64(math.Pow(2, 35)-1)
+	end := epochStart + int64(math.Pow(2, timestampBits)-1)
 	duration := end - start
 	years := duration / 60 / 60 / 24 / 365
 	yearsThreshold := int64(1000)
