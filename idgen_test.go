@@ -33,8 +33,8 @@ func TestGenerateId(t *testing.T) {
 
 	t.Run("Generate timestamp overflow", func(t *testing.T) {
 		modifiedParams := params
-		overflowValue := uint64(10)
-		timestamp := uint64(math.Pow(2, 35)) + epochStart + overflowValue
+		overflowValue := int64(10)
+		timestamp := int64(math.Pow(2, 35)) + epochStart + overflowValue
 		modifiedParams.timestamp = time.Unix(int64(timestamp), 0)
 		generated := generateIdForParams(modifiedParams)
 		var expected int64 = 2684372233
