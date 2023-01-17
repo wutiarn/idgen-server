@@ -49,3 +49,14 @@ func TestGenerateId(t *testing.T) {
 		}
 	})
 }
+
+func TestTimestampLifetime(t *testing.T) {
+	start := epochStart
+	end := epochStart + int64(math.Pow(2, 35)-1)
+	duration := end - start
+	years := duration / 60 / 60 / 24 / 365
+	yearsThreshold := int64(1000)
+	if years < yearsThreshold {
+		t.Errorf("token lifespan is %v years, which is less than %v years threshold", years, yearsThreshold)
+	}
+}

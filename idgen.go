@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const epochStart = 1672531200 // 2023-01-01 00:00:00
+const epochStart = int64(1672531200) // 2023-01-01 00:00:00
 const timestampBits = 35
 const counterBits = 14
 const serverIdBits = 6
@@ -52,9 +52,9 @@ func encodePart(srcId int64, value int64, bits int) int64 {
 	return srcId<<bits | value
 }
 
-func extractPart(id int64, bits int) (extracted uint64, remainingId int64) {
+func extractPart(id int64, bits int) (extracted int64, remainingId int64) {
 	mask := int64(math.Pow(2, float64(bits))) - 1
-	extracted = uint64(id & mask)
+	extracted = id & mask
 	remainingId = id >> bits
 	return
 }
