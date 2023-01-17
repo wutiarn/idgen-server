@@ -5,7 +5,7 @@ import (
 )
 
 func TestGenerateId(t *testing.T) {
-	params := IdParams{
+	params := idParams{
 		timestamp: uint64(1673989769),
 		counter:   1,
 		serverId:  5,
