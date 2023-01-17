@@ -13,7 +13,7 @@ const domainBits = 8
 
 func GenerateId(domain uint8) int64 {
 	params := idParams{
-		timestamp: uint64(time.Now().Unix()),
+		timestamp: time.Now(),
 		counter:   1,
 		serverId:  5,
 		domain:    uint64(domain),
@@ -23,7 +23,8 @@ func GenerateId(domain uint8) int64 {
 
 func generateIdForParams(params idParams) int64 {
 	var id int64 = 0
-	id = encodePart(id, params.timestamp-epochStart, timestampBits)
+	timestamp := uint64(params.timestamp.Unix()) - epochStart
+	id = encodePart(id, timestamp, timestampBits)
 	id = encodePart(id, params.counter, counterBits)
 	id = encodePart(id, params.serverId, serverIdBits)
 	id = encodePart(id, params.domain, domainBits)
@@ -36,9 +37,9 @@ func parseIdToParams(id int64) idParams {
 	result.domain, id = extractPart(id, domainBits)
 	result.serverId, id = extractPart(id, serverIdBits)
 	result.counter, id = extractPart(id, counterBits)
-	result.timestamp, id = extractPart(id, timestampBits)
+	timestamp, id := extractPart(id, timestampBits)
 
-	result.timestamp = result.timestamp + epochStart
+	result.timestamp = time.Unix(int64(timestamp+epochStart), 0)
 
 	return result
 }
@@ -57,7 +58,7 @@ func extractPart(id int64, bits int) (extracted uint64, remainingId int64) {
 }
 
 type idParams struct {
-	timestamp uint64
+	timestamp time.Time
 	counter   uint64
 	serverId  uint64
 	domain    uint64

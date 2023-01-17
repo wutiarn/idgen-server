@@ -3,11 +3,12 @@ package main
 import (
 	"math"
 	"testing"
+	"time"
 )
 
 func TestGenerateId(t *testing.T) {
 	params := idParams{
-		timestamp: uint64(1673989769),
+		timestamp: time.Unix(1673989769, 0),
 		counter:   1,
 		serverId:  5,
 		domain:    9,
@@ -33,7 +34,8 @@ func TestGenerateId(t *testing.T) {
 	t.Run("Generate timestamp overflow", func(t *testing.T) {
 		modifiedParams := params
 		overflowValue := uint64(10)
-		modifiedParams.timestamp = uint64(math.Pow(2, 35)) + epochStart + overflowValue
+		timestamp := uint64(math.Pow(2, 35)) + epochStart + overflowValue
+		modifiedParams.timestamp = time.Unix(int64(timestamp), 0)
 		generated := generateIdForParams(modifiedParams)
 		var expected int64 = 2684372233
 		if generated != expected {
@@ -41,7 +43,7 @@ func TestGenerateId(t *testing.T) {
 		}
 
 		parsedParams := parseIdToParams(generated)
-		modifiedParams.timestamp = overflowValue + epochStart
+		modifiedParams.timestamp = time.Unix(int64(overflowValue+epochStart), 0)
 		if parsedParams != modifiedParams {
 			t.Errorf("parseIdToParams returned %v, expected %v", parsedParams, modifiedParams)
 		}
