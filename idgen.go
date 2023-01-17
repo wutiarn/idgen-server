@@ -21,22 +21,29 @@ func GenerateId(domain uint8) int64 {
 }
 
 func generateIdForParams(params idParams) int64 {
-	id := params.timestamp
-	id = id<<14 | uint64(params.counter)
-	id = id<<6 | uint64(params.serverId)
-	id = id<<8 | uint64(params.domain)
-	return int64(id)
+	var id int64 = 0
+	id = encodePart(id, params.timestamp, timestampBits)
+	id = encodePart(id, params.counter, counterBits)
+	id = encodePart(id, params.serverId, serverIdBits)
+	id = encodePart(id, params.domain, domainBits)
+	return id
 }
 
 func parseIdToParams(id int64) idParams {
 	result := idParams{}
 
-	result.domain, id = extractPart(id, 8)
-	result.serverId, id = extractPart(id, 6)
-	result.counter, id = extractPart(id, 14)
-	result.timestamp, id = extractPart(id, 35)
+	result.domain, id = extractPart(id, domainBits)
+	result.serverId, id = extractPart(id, serverIdBits)
+	result.counter, id = extractPart(id, counterBits)
+	result.timestamp, id = extractPart(id, timestampBits)
 
 	return result
+}
+
+func encodePart(srcId int64, value uint64, bits int) int64 {
+	mask := uint64(math.Pow(2, float64(bits))) - 1
+	value = value & mask
+	return srcId<<bits | int64(value)
 }
 
 func extractPart(id int64, bits int) (extracted uint64, remainingId int64) {
