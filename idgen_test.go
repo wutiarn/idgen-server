@@ -121,4 +121,25 @@ func TestIncrementCounter(t *testing.T) {
 			t.Errorf("Incorrect counter value: %v", worker.counter)
 		}
 	})
+
+	t.Run("Increment to max timedelta", func(t *testing.T) {
+		now := time.Now().Unix()
+		worker.currentTimestamp = time.Unix(now-(reservedSeconds*3), 0)
+		startTimestamp := worker.currentTimestamp
+		worker.incrementCounter()
+
+		timeDelta := worker.currentTimestamp.Unix() - startTimestamp.Unix()
+		if timeDelta < reservedSeconds*1.9 {
+			t.Errorf("Incorrect time delta with start timestamp: %v", timeDelta)
+		}
+
+		timeDelta = now - worker.currentTimestamp.Unix()
+		if timeDelta > reservedSeconds || timeDelta < reservedSeconds*0.5 {
+			t.Errorf("Incorrect time delta with now: %v", timeDelta)
+		}
+
+		if worker.counter != 0 {
+			t.Errorf("Incorrect counter value: %v", worker.counter)
+		}
+	})
 }
