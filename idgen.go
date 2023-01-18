@@ -12,6 +12,7 @@ const timestampBits = 35
 const counterBits = 14
 const serverIdBits = 6
 const domainBits = 8
+const reservedSeconds = 10
 
 type IdGenerator struct {
 	domainWorkers []domainWorker
@@ -69,10 +70,12 @@ type idGenerationRequest struct {
 }
 
 type domainWorker struct {
-	ch       chan idGenerationRequest
-	domain   uint8
-	serverId uint8
-	wg       *sync.WaitGroup
+	ch               chan idGenerationRequest
+	domain           uint8
+	serverId         uint8
+	currentTimestamp time.Time
+	counter          uint16
+	wg               *sync.WaitGroup
 }
 
 func (w *domainWorker) start() {
@@ -80,9 +83,10 @@ func (w *domainWorker) start() {
 	w.wg.Add(1)
 	for request := range w.ch {
 		for i := 0; i < request.count; i++ {
+			w.incrementCounter()
 			params := idParams{
 				timestamp: timestamp,
-				counter:   0,
+				counter:   w.counter,
 				serverId:  w.serverId,
 				domain:    w.domain,
 			}
@@ -94,6 +98,33 @@ func (w *domainWorker) start() {
 	}
 	log.Printf("Domain %v worker finished", w.domain)
 	w.wg.Done()
+}
+
+func (w *domainWorker) incrementCounter() {
+	timeDelta := time.Now().Unix() - w.currentTimestamp.Unix()
+	if timeDelta > reservedSeconds {
+		w.currentTimestamp = time.Unix(time.Now().Unix()-reservedSeconds, 0)
+		w.counter = 0
+		return
+	}
+
+	maxCounterValue := uint16(math.Pow(2, float64(counterBits)) - 1)
+	if w.counter < maxCounterValue {
+		w.counter++
+		return
+	}
+
+	if timeDelta > 0 {
+		w.currentTimestamp = w.currentTimestamp.Add(time.Second)
+		w.counter = 0
+		return
+	}
+
+	waitDuration := time.Until(w.currentTimestamp.Add(time.Second))
+	log.Printf("Sleeping until next second (%v)", waitDuration)
+	time.Sleep(waitDuration)
+	w.currentTimestamp = w.currentTimestamp.Add(time.Second)
+	w.counter = 0
 }
 
 // ---------- ID generation internals ----------
