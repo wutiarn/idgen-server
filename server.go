@@ -11,6 +11,7 @@ import (
 func runServer() {
 	r := gin.Default()
 	r.GET("/generate", handleGenerateRequest)
+	r.GET("/parse", parseId)
 	err := r.Run()
 	if err != nil {
 		panic(err)
@@ -35,7 +36,7 @@ func handleGenerateRequest(context *gin.Context) {
 			return
 		}
 		if domainInt&int(maxDomainValue) != 0 {
-			context.AbortWithError(400, errors.New(fmt.Sprintf("Provided domain exceed maximum value %v", maxCounterValue)))
+			context.AbortWithError(400, errors.New(fmt.Sprintf("provided domain exceed maximum value %v", maxCounterValue)))
 			return
 		}
 		domain = uint8(domainInt)
@@ -50,6 +51,22 @@ func handleGenerateRequest(context *gin.Context) {
 	}
 	response := generateIdsResponse{Ids: ids}
 	context.JSON(200, response)
+}
+
+//goland:noinspection GoUnhandledErrorResult
+func parseId(context *gin.Context) {
+	idStr, idPassed := context.GetQuery("id")
+	if !idPassed {
+		context.AbortWithError(400, errors.New("required param id was not provided"))
+		return
+	}
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		context.AbortWithError(400, errors.New("failed to parse provided id to int64"))
+		return
+	}
+	params := parseIdToParams(id)
+	context.JSON(200, params)
 }
 
 type generateIdsResponse struct {

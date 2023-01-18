@@ -90,7 +90,7 @@ func (w *domainWorker) start() {
 	for request := range w.ch {
 		for i := 0; i < request.count; i++ {
 			w.incrementCounter()
-			params := idParams{
+			params := IdParams{
 				timestamp: timestamp,
 				counter:   w.counter,
 				serverId:  w.serverId,
@@ -137,14 +137,14 @@ func (w *domainWorker) incrementCounter() {
 
 // ---------- ID generation internals ----------
 
-type idParams struct {
+type IdParams struct {
 	timestamp time.Time
 	counter   uint16
 	serverId  uint8
 	domain    uint8
 }
 
-func generateIdForParams(params idParams) int64 {
+func generateIdForParams(params IdParams) int64 {
 	var id int64 = 0
 	timestamp := params.timestamp.Unix() - epochStart
 	id = encodePart(id, timestamp, timestampBits)
@@ -154,13 +154,13 @@ func generateIdForParams(params idParams) int64 {
 	return id
 }
 
-func parseIdToParams(id int64) idParams {
+func parseIdToParams(id int64) IdParams {
 	domain, id := extractPart(id, domainBits)
 	serverId, id := extractPart(id, serverIdBits)
 	counter, id := extractPart(id, counterBits)
 	timestamp, id := extractPart(id, timestampBits)
 
-	return idParams{
+	return IdParams{
 		timestamp: time.Unix(int64(timestamp+epochStart), 0),
 		counter:   uint16(counter),
 		serverId:  uint8(serverId),
