@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"go.uber.org/zap"
 	"math"
 	"sync"
 	"time"
@@ -28,7 +28,6 @@ func NewIdGenerator(serverId uint8) *IdGenerator {
 	}
 	domainCount := int(math.Pow(2, domainBits))
 	for i := 0; i < domainCount; i++ {
-		println("Starting counter goroutine for domain", i)
 		goroutine := domainWorker{
 			ch:               make(chan idGenerationRequest),
 			domain:           uint8(i),
@@ -40,6 +39,8 @@ func NewIdGenerator(serverId uint8) *IdGenerator {
 		go goroutine.start()
 		generator.domainWorkers = append(generator.domainWorkers, goroutine)
 	}
+	logger.Info("Id generator initialized",
+		zap.Int("domainCount", domainCount))
 	return &generator
 }
 
@@ -63,7 +64,7 @@ func (g *IdGenerator) Shutdown() {
 		close(worker.ch)
 	}
 	g.wg.Wait()
-	log.Printf("All domains worker finished")
+	logger.Info("All domains worker finished")
 }
 
 // ---------- Domain worker goroutines implementation ----------
@@ -98,9 +99,10 @@ func (w *domainWorker) start() {
 			request.resultCh <- id
 		}
 		close(request.resultCh)
-		log.Printf("Generated %v ids in domain %v", request.count, w.domain)
+		logger.Debug("ID generation request completed",
+			zap.Int("requestCount", request.count),
+			zap.Uint8("domain", w.domain))
 	}
-	log.Printf("Domain %v worker finished", w.domain)
 	w.wg.Done()
 }
 
@@ -124,7 +126,9 @@ func (w *domainWorker) incrementCounter() {
 	}
 
 	waitDuration := time.Until(w.currentTimestamp.Add(time.Second))
-	log.Printf("Sleeping until next second (%v)", waitDuration)
+	logger.Warn("Sleeping until next second",
+		zap.Duration("duration", waitDuration),
+		zap.Uint8("domain", w.domain))
 	time.Sleep(waitDuration)
 	w.currentTimestamp = w.currentTimestamp.Add(time.Second)
 	w.counter = 0
