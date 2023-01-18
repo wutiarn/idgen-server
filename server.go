@@ -44,11 +44,12 @@ func handleGenerateRequest(context *gin.Context) {
 	}
 
 	idsCh := idGenerator.GenerateId(domain, count)
-	ids := make([]int64, count)
+	ids := make([]int64, 0, count)
 	for id := range idsCh {
 		ids = append(ids, id)
 	}
-	context.JSON(200, generateIdsResponse{ids: ids})
+	response := generateIdsResponse{ids: ids}
+	context.JSON(200, response)
 }
 
 type generateIdsResponse struct {
