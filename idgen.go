@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"math"
+	"sync"
 	"time"
 )
 
@@ -14,12 +15,14 @@ const domainBits = 8
 
 type IdGenerator struct {
 	domainWorkers []domainWorker
+	wg            *sync.WaitGroup
 }
 
 type domainWorker struct {
 	ch       chan IdGenerationRequest
 	domain   int8
 	serverId int8
+	wg       *sync.WaitGroup
 }
 
 type IdGenerationRequest struct {
@@ -28,7 +31,10 @@ type IdGenerationRequest struct {
 }
 
 func NewIdGenerator(serverId int8) *IdGenerator {
-	generator := IdGenerator{}
+	wg := sync.WaitGroup{}
+	generator := IdGenerator{
+		wg: &wg,
+	}
 	domainCount := int(math.Pow(2, domainBits))
 	for i := 0; i < domainCount; i++ {
 		println("Starting counter goroutine for domain", i)
@@ -36,6 +42,7 @@ func NewIdGenerator(serverId int8) *IdGenerator {
 			ch:       make(chan IdGenerationRequest),
 			domain:   int8(i),
 			serverId: serverId,
+			wg:       &wg,
 		}
 		go goroutine.start()
 		generator.domainWorkers = append(generator.domainWorkers, goroutine)
@@ -58,29 +65,33 @@ func (g *IdGenerator) GenerateId(domain int8, count int) chan int64 {
 	return result
 }
 
-func (this *domainWorker) start() {
+func (w *domainWorker) start() {
 	timestamp := time.Now()
-	for request := range this.ch {
+	w.wg.Add(1)
+	for request := range w.ch {
 		for i := 0; i < request.count; i++ {
 			params := idParams{
 				timestamp: timestamp,
 				counter:   0,
-				serverId:  this.serverId,
-				domain:    this.domain,
+				serverId:  w.serverId,
+				domain:    w.domain,
 			}
 			id := generateIdForParams(params)
 			request.resultCh <- id
 		}
 		close(request.resultCh)
-		log.Printf("Generated %v ids in domain %v", request.count, this.domain)
+		log.Printf("Generated %v ids in domain %v", request.count, w.domain)
 	}
-	log.Printf("Domain %v worker closed", this.domain)
+	log.Printf("Domain %v worker finished", w.domain)
+	w.wg.Done()
 }
 
 func (g *IdGenerator) shutdown() {
 	for _, worker := range g.domainWorkers {
 		close(worker.ch)
 	}
+	g.wg.Wait()
+	log.Printf("All domains worker finished")
 }
 
 func generateIdForParams(params idParams) int64 {
