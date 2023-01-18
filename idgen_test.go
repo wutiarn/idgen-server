@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"sync"
 	"testing"
 	"time"
 )
@@ -79,4 +80,29 @@ func TestNewIdGenerator(t *testing.T) {
 	}
 
 	generator.Shutdown()
+}
+
+func TestIncrementCounter(t *testing.T) {
+	startTime := time.Now()
+	worker := domainWorker{
+		ch:               make(chan idGenerationRequest),
+		domain:           uint8(3),
+		serverId:         5,
+		currentTimestamp: startTime,
+		counter:          0,
+		wg:               &sync.WaitGroup{},
+	}
+
+	t.Run("First counter increment", func(t *testing.T) {
+		worker.incrementCounter()
+
+		timeDelta := worker.currentTimestamp.Sub(startTime).Seconds()
+		if timeDelta > 1 {
+			t.Errorf("Incorrect timestamp increment: %v", timeDelta)
+		}
+
+		if worker.counter != 1 {
+			t.Errorf("Incorrect counter increment: %v", worker.counter)
+		}
+	})
 }
