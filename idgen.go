@@ -91,10 +91,10 @@ func (w *domainWorker) start() {
 		for i := 0; i < request.count; i++ {
 			w.incrementCounter()
 			params := IdParams{
-				timestamp: timestamp,
-				counter:   w.counter,
-				serverId:  w.serverId,
-				domain:    w.domain,
+				Timestamp: timestamp,
+				Counter:   w.counter,
+				ServerId:  w.serverId,
+				Domain:    w.domain,
 			}
 			id := generateIdForParams(params)
 			request.resultCh <- id
@@ -102,7 +102,7 @@ func (w *domainWorker) start() {
 		close(request.resultCh)
 		logger.Debug("ID generation request completed",
 			zap.Int("requestCount", request.count),
-			zap.Uint8("domain", w.domain))
+			zap.Uint8("Domain", w.domain))
 	}
 	w.wg.Done()
 }
@@ -129,7 +129,7 @@ func (w *domainWorker) incrementCounter() {
 	waitDuration := time.Until(w.currentTimestamp.Add(time.Second))
 	logger.Warn("Sleeping until next second",
 		zap.Duration("duration", waitDuration),
-		zap.Uint8("domain", w.domain))
+		zap.Uint8("Domain", w.domain))
 	time.Sleep(waitDuration)
 	w.currentTimestamp = w.currentTimestamp.Add(time.Second)
 	w.counter = 0
@@ -138,19 +138,19 @@ func (w *domainWorker) incrementCounter() {
 // ---------- ID generation internals ----------
 
 type IdParams struct {
-	timestamp time.Time
-	counter   uint16
-	serverId  uint8
-	domain    uint8
+	Timestamp time.Time `json:"timestamp"`
+	Counter   uint16    `json:"counter"`
+	ServerId  uint8     `json:"serverId"`
+	Domain    uint8     `json:"domain"`
 }
 
 func generateIdForParams(params IdParams) int64 {
 	var id int64 = 0
-	timestamp := params.timestamp.Unix() - epochStart
+	timestamp := params.Timestamp.Unix() - epochStart
 	id = encodePart(id, timestamp, timestampBits)
-	id = encodePart(id, int64(params.counter), counterBits)
-	id = encodePart(id, int64(params.serverId), serverIdBits)
-	id = encodePart(id, int64(params.domain), domainBits)
+	id = encodePart(id, int64(params.Counter), counterBits)
+	id = encodePart(id, int64(params.ServerId), serverIdBits)
+	id = encodePart(id, int64(params.Domain), domainBits)
 	return id
 }
 
@@ -161,10 +161,10 @@ func parseIdToParams(id int64) IdParams {
 	timestamp, id := extractPart(id, timestampBits)
 
 	return IdParams{
-		timestamp: time.Unix(int64(timestamp+epochStart), 0),
-		counter:   uint16(counter),
-		serverId:  uint8(serverId),
-		domain:    uint8(domain),
+		Timestamp: time.Unix(int64(timestamp+epochStart), 0),
+		Counter:   uint16(counter),
+		ServerId:  uint8(serverId),
+		Domain:    uint8(domain),
 	}
 }
 

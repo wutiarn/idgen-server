@@ -28,7 +28,7 @@ func handleGenerateRequest(context *gin.Context) {
 	}
 
 	var domain uint8
-	domainStr, domainPassed := context.GetQuery("domain")
+	domainStr, domainPassed := context.GetQuery("Domain")
 	if domainPassed {
 		domainInt, err := strconv.Atoi(domainStr)
 		if err != nil {
@@ -36,7 +36,7 @@ func handleGenerateRequest(context *gin.Context) {
 			return
 		}
 		if domainInt&int(maxDomainValue) != 0 {
-			context.AbortWithError(400, errors.New(fmt.Sprintf("provided domain exceed maximum value %v", maxCounterValue)))
+			context.AbortWithError(400, errors.New(fmt.Sprintf("provided Domain exceed maximum value %v", maxCounterValue)))
 			return
 		}
 		domain = uint8(domainInt)

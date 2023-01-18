@@ -9,10 +9,10 @@ import (
 
 func TestGenerateId(t *testing.T) {
 	params := IdParams{
-		timestamp: time.Unix(1673989769, 0),
-		counter:   1,
-		serverId:  5,
-		domain:    9,
+		Timestamp: time.Unix(1673989769, 0),
+		Counter:   1,
+		ServerId:  5,
+		Domain:    9,
 	}
 
 	var id int64 = 0
@@ -32,11 +32,11 @@ func TestGenerateId(t *testing.T) {
 		}
 	})
 
-	t.Run("Generate timestamp overflow", func(t *testing.T) {
+	t.Run("Generate Timestamp overflow", func(t *testing.T) {
 		modifiedParams := params
 		overflowValue := int64(10)
 		timestamp := int64(math.Pow(2, 35)) + epochStart + overflowValue
-		modifiedParams.timestamp = time.Unix(int64(timestamp), 0)
+		modifiedParams.Timestamp = time.Unix(int64(timestamp), 0)
 		generated := generateIdForParams(modifiedParams)
 		var expected int64 = 2684372233
 		if generated != expected {
@@ -44,7 +44,7 @@ func TestGenerateId(t *testing.T) {
 		}
 
 		parsedParams := parseIdToParams(generated)
-		modifiedParams.timestamp = time.Unix(int64(overflowValue+epochStart), 0)
+		modifiedParams.Timestamp = time.Unix(int64(overflowValue+epochStart), 0)
 		if parsedParams != modifiedParams {
 			t.Errorf("parseIdToParams returned %v, expected %v", parsedParams, modifiedParams)
 		}
@@ -69,14 +69,14 @@ func TestNewIdGenerator(t *testing.T) {
 	id := generator.GenerateSingleId(domainId)
 
 	params := parseIdToParams(id)
-	if params.domain != domainId {
-		t.Errorf("Generated id domain is %v, expected %v", params.domain, domainId)
+	if params.Domain != domainId {
+		t.Errorf("Generated id Domain is %v, expected %v", params.Domain, domainId)
 	}
-	if params.serverId != serverId {
-		t.Errorf("Generated id serverId is %v, expected %v", params.serverId, serverId)
+	if params.ServerId != serverId {
+		t.Errorf("Generated id ServerId is %v, expected %v", params.ServerId, serverId)
 	}
-	if !params.timestamp.Before(time.Now()) {
-		t.Errorf("Generated id timestamp %v is in future", params.timestamp)
+	if !params.Timestamp.Before(time.Now()) {
+		t.Errorf("Generated id Timestamp %v is in future", params.Timestamp)
 	}
 
 	generator.Shutdown()
@@ -93,16 +93,16 @@ func TestIncrementCounter(t *testing.T) {
 		wg:               &sync.WaitGroup{},
 	}
 
-	t.Run("First counter increment", func(t *testing.T) {
+	t.Run("First Counter increment", func(t *testing.T) {
 		worker.incrementCounter()
 
 		timeDelta := worker.currentTimestamp.Sub(startTime).Seconds()
 		if timeDelta > 1 {
-			t.Errorf("Incorrect timestamp increment: %v", timeDelta)
+			t.Errorf("Incorrect Timestamp increment: %v", timeDelta)
 		}
 
 		if worker.counter != 1 {
-			t.Errorf("Incorrect counter increment: %v", worker.counter)
+			t.Errorf("Incorrect Counter increment: %v", worker.counter)
 		}
 	})
 
@@ -114,11 +114,11 @@ func TestIncrementCounter(t *testing.T) {
 
 		timeDelta := worker.currentTimestamp.Unix() - startTimestamp.Unix()
 		if timeDelta < 1 {
-			t.Errorf("Incorrect timestamp value: %v", timeDelta)
+			t.Errorf("Incorrect Timestamp value: %v", timeDelta)
 		}
 
 		if worker.counter != 0 {
-			t.Errorf("Incorrect counter value: %v", worker.counter)
+			t.Errorf("Incorrect Counter value: %v", worker.counter)
 		}
 	})
 
@@ -130,7 +130,7 @@ func TestIncrementCounter(t *testing.T) {
 
 		timeDelta := worker.currentTimestamp.Unix() - startTimestamp.Unix()
 		if timeDelta < reservedSeconds*1.9 {
-			t.Errorf("Incorrect time delta with start timestamp: %v", timeDelta)
+			t.Errorf("Incorrect time delta with start Timestamp: %v", timeDelta)
 		}
 
 		timeDelta = now - worker.currentTimestamp.Unix()
@@ -139,7 +139,7 @@ func TestIncrementCounter(t *testing.T) {
 		}
 
 		if worker.counter != 0 {
-			t.Errorf("Incorrect counter value: %v", worker.counter)
+			t.Errorf("Incorrect Counter value: %v", worker.counter)
 		}
 	})
 }
