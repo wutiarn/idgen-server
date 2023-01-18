@@ -85,13 +85,12 @@ type domainWorker struct {
 }
 
 func (w *domainWorker) start() {
-	timestamp := time.Now()
 	w.wg.Add(1)
 	for request := range w.ch {
 		for i := 0; i < request.count; i++ {
 			w.incrementCounter()
 			params := IdParams{
-				Timestamp: timestamp,
+				Timestamp: w.currentTimestamp,
 				Counter:   w.counter,
 				ServerId:  w.serverId,
 				Domain:    w.domain,
