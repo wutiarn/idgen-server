@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"math"
 	"time"
 )
@@ -12,10 +13,10 @@ const serverIdBits = 6
 const domainBits = 8
 
 type IdGenerator struct {
-	domainWorkers []idGeneratorGoroutine
+	domainWorkers []domainWorker
 }
 
-type idGeneratorGoroutine struct {
+type domainWorker struct {
 	ch       chan IdGenerationRequest
 	domain   int8
 	serverId int8
@@ -31,7 +32,7 @@ func NewIdGenerator(serverId int8) *IdGenerator {
 	domainCount := int(math.Pow(2, domainBits))
 	for i := 0; i < domainCount; i++ {
 		println("Starting counter goroutine for domain", i)
-		goroutine := idGeneratorGoroutine{
+		goroutine := domainWorker{
 			ch:       make(chan IdGenerationRequest),
 			domain:   int8(i),
 			serverId: serverId,
@@ -57,7 +58,7 @@ func (g *IdGenerator) GenerateId(domain int8, count int) chan int64 {
 	return result
 }
 
-func (this *idGeneratorGoroutine) start() {
+func (this *domainWorker) start() {
 	timestamp := time.Now()
 	for request := range this.ch {
 		for i := 0; i < request.count; i++ {
@@ -71,7 +72,9 @@ func (this *idGeneratorGoroutine) start() {
 			request.resultCh <- id
 		}
 		close(request.resultCh)
+		log.Printf("Generated %v ids in domain %v", request.count, this.domain)
 	}
+	log.Printf("Domain %v worker closed", this.domain)
 }
 
 func generateIdForParams(params idParams) int64 {
