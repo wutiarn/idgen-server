@@ -62,8 +62,8 @@ func TestTimestampLifetime(t *testing.T) {
 }
 
 func TestNewIdGenerator(t *testing.T) {
-	serverId := int8(3)
-	domainId := int8(8)
+	serverId := uint8(3)
+	domainId := uint8(8)
 	generator := NewIdGenerator(serverId)
 	id := generator.GenerateSingleId(domainId)
 

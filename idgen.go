@@ -20,8 +20,8 @@ type IdGenerator struct {
 
 type domainWorker struct {
 	ch       chan IdGenerationRequest
-	domain   int8
-	serverId int8
+	domain   uint8
+	serverId uint8
 	wg       *sync.WaitGroup
 }
 
@@ -30,7 +30,7 @@ type IdGenerationRequest struct {
 	resultCh chan int64
 }
 
-func NewIdGenerator(serverId int8) *IdGenerator {
+func NewIdGenerator(serverId uint8) *IdGenerator {
 	wg := sync.WaitGroup{}
 	generator := IdGenerator{
 		wg: &wg,
@@ -40,7 +40,7 @@ func NewIdGenerator(serverId int8) *IdGenerator {
 		println("Starting counter goroutine for domain", i)
 		goroutine := domainWorker{
 			ch:       make(chan IdGenerationRequest),
-			domain:   int8(i),
+			domain:   uint8(i),
 			serverId: serverId,
 			wg:       &wg,
 		}
@@ -50,11 +50,11 @@ func NewIdGenerator(serverId int8) *IdGenerator {
 	return &generator
 }
 
-func (g *IdGenerator) GenerateSingleId(domain int8) int64 {
+func (g *IdGenerator) GenerateSingleId(domain uint8) int64 {
 	return <-g.GenerateId(domain, 1)
 }
 
-func (g *IdGenerator) GenerateId(domain int8, count int) chan int64 {
+func (g *IdGenerator) GenerateId(domain uint8, count int) chan int64 {
 	result := make(chan int64)
 	request := IdGenerationRequest{
 		count:    count,
@@ -112,9 +112,9 @@ func parseIdToParams(id int64) idParams {
 
 	return idParams{
 		timestamp: time.Unix(int64(timestamp+epochStart), 0),
-		counter:   int16(counter),
-		serverId:  int8(serverId),
-		domain:    int8(domain),
+		counter:   uint16(counter),
+		serverId:  uint8(serverId),
+		domain:    uint8(domain),
 	}
 }
 
@@ -133,7 +133,7 @@ func extractPart(id int64, bits int) (extracted int64, remainingId int64) {
 
 type idParams struct {
 	timestamp time.Time
-	counter   int16
-	serverId  int8
-	domain    int8
+	counter   uint16
+	serverId  uint8
+	domain    uint8
 }
