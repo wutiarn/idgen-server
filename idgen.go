@@ -14,6 +14,8 @@ const serverIdBits = 6
 const domainBits = 8
 const reservedSeconds = 10
 
+var maxCounterValue = uint16(math.Pow(2, float64(counterBits)) - 1)
+
 type IdGenerator struct {
 	domainWorkers []domainWorker
 	wg            *sync.WaitGroup
@@ -110,7 +112,6 @@ func (w *domainWorker) incrementCounter() {
 		return
 	}
 
-	maxCounterValue := uint16(math.Pow(2, float64(counterBits)) - 1)
 	if w.counter < maxCounterValue {
 		w.counter++
 		return

@@ -105,4 +105,20 @@ func TestIncrementCounter(t *testing.T) {
 			t.Errorf("Incorrect counter increment: %v", worker.counter)
 		}
 	})
+
+	t.Run("Sleep until next second", func(t *testing.T) {
+		worker.currentTimestamp = time.Now()
+		startTimestamp := worker.currentTimestamp
+		worker.counter = maxCounterValue
+		worker.incrementCounter()
+
+		timeDelta := worker.currentTimestamp.Unix() - startTimestamp.Unix()
+		if timeDelta < 1 {
+			t.Errorf("Incorrect timestamp value: %v", timeDelta)
+		}
+
+		if worker.counter != 0 {
+			t.Errorf("Incorrect counter value: %v", worker.counter)
+		}
+	})
 }
