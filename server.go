@@ -48,10 +48,10 @@ func handleGenerateRequest(context *gin.Context) {
 	for id := range idsCh {
 		ids = append(ids, id)
 	}
-	response := generateIdsResponse{ids: ids}
+	response := generateIdsResponse{Ids: ids}
 	context.JSON(200, response)
 }
 
 type generateIdsResponse struct {
-	ids []int64
+	Ids []int64 `json:"ids"`
 }
