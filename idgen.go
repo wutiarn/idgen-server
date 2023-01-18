@@ -77,6 +77,12 @@ func (this *domainWorker) start() {
 	log.Printf("Domain %v worker closed", this.domain)
 }
 
+func (g *IdGenerator) shutdown() {
+	for _, worker := range g.domainWorkers {
+		close(worker.ch)
+	}
+}
+
 func generateIdForParams(params idParams) int64 {
 	var id int64 = 0
 	timestamp := params.timestamp.Unix() - epochStart

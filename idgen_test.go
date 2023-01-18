@@ -77,4 +77,6 @@ func TestNewIdGenerator(t *testing.T) {
 	if !params.timestamp.Before(time.Now()) {
 		t.Errorf("Generated id timestamp %v is in future", params.timestamp)
 	}
+
+	generator.shutdown()
 }
