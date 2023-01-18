@@ -15,6 +15,7 @@ const domainBits = 8
 const reservedSeconds = 10
 
 var maxCounterValue = uint16(math.Pow(2, float64(counterBits)) - 1)
+var maxDomainValue = uint8(math.Pow(2, float64(domainBits)) - 1)
 
 type IdGenerator struct {
 	domainWorkers []domainWorker

@@ -3,6 +3,7 @@ package main
 import "go.uber.org/zap"
 
 var logger, _ = zap.NewDevelopment()
+var idGenerator = NewIdGenerator(8)
 
 func main() {
 	//goland:noinspection GoUnhandledErrorResult
@@ -11,5 +12,5 @@ func main() {
 	logger.Info("Server started",
 		zap.Uint8("nodeId", config.NodeId),
 	)
-	println("Hello world", config.NodeId)
+	runServer()
 }
