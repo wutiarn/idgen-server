@@ -28,10 +28,12 @@ func NewIdGenerator(serverId uint8) *IdGenerator {
 	for i := 0; i < domainCount; i++ {
 		println("Starting counter goroutine for domain", i)
 		goroutine := domainWorker{
-			ch:       make(chan idGenerationRequest),
-			domain:   uint8(i),
-			serverId: serverId,
-			wg:       &wg,
+			ch:               make(chan idGenerationRequest),
+			domain:           uint8(i),
+			serverId:         serverId,
+			currentTimestamp: time.Now(),
+			counter:          0,
+			wg:               &wg,
 		}
 		go goroutine.start()
 		generator.domainWorkers = append(generator.domainWorkers, goroutine)
