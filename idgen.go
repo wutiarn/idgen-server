@@ -105,7 +105,6 @@ func generateIdForParams(params idParams) int64 {
 }
 
 func parseIdToParams(id int64) idParams {
-
 	domain, id := extractPart(id, domainBits)
 	serverId, id := extractPart(id, serverIdBits)
 	counter, id := extractPart(id, counterBits)
