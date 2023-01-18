@@ -60,3 +60,7 @@ func TestTimestampLifetime(t *testing.T) {
 		t.Errorf("token lifespan is %v years, which is less than %v years threshold", years, yearsThreshold)
 	}
 }
+
+func TestNewIdGenerator(t *testing.T) {
+	NewIdGenerator(3)
+}

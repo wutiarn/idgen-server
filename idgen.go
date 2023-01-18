@@ -11,7 +11,20 @@ const counterBits = 14
 const serverIdBits = 6
 const domainBits = 8
 
-func GenerateId(domain int8) int64 {
+type IdGenerator struct {
+	serverId       int8
+	domainCounters []chan int64
+}
+
+func NewIdGenerator(serverId int8) *IdGenerator {
+	domainCount := int(math.Pow(2, domainBits))
+	for i := 0; i < domainCount; i++ {
+		println("Starting counter goroutine for domain", i)
+	}
+	return &IdGenerator{}
+}
+
+func (*IdGenerator) GenerateId(domain int8) int64 {
 	params := idParams{
 		timestamp: time.Now(),
 		counter:   1,
