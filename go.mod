@@ -2,12 +2,15 @@ module idgen-server
 
 go 1.19
 
-require github.com/ilyakaznacheev/cleanenv v1.4.2
+require (
+	github.com/gin-gonic/gin v1.8.2
+	github.com/ilyakaznacheev/cleanenv v1.4.2
+	go.uber.org/zap v1.24.0
+)
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/gin-gonic/gin v1.8.2 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.11.1 // indirect
@@ -23,7 +26,6 @@ require (
 	github.com/ugorji/go/codec v1.2.8 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/crypto v0.5.0 // indirect
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
