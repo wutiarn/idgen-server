@@ -12,7 +12,18 @@ const serverIdBits = 6
 const domainBits = 8
 
 type IdGenerator struct {
-	domainCounters []chan int64
+	domainWorkers []idGeneratorGoroutine
+}
+
+type idGeneratorGoroutine struct {
+	ch       chan IdGenerationRequest
+	domain   int8
+	serverId int8
+}
+
+type IdGenerationRequest struct {
+	count    int
+	resultCh chan int64
 }
 
 func NewIdGenerator(serverId int8) *IdGenerator {
@@ -20,28 +31,47 @@ func NewIdGenerator(serverId int8) *IdGenerator {
 	domainCount := int(math.Pow(2, domainBits))
 	for i := 0; i < domainCount; i++ {
 		println("Starting counter goroutine for domain", i)
-		ch := make(chan int64)
-		go startIdGenCoroutine(int8(i), ch, serverId)
-		generator.domainCounters = append(generator.domainCounters, ch)
+		goroutine := idGeneratorGoroutine{
+			ch:       make(chan IdGenerationRequest),
+			domain:   int8(i),
+			serverId: serverId,
+		}
+		go goroutine.start()
+		generator.domainWorkers = append(generator.domainWorkers, goroutine)
 	}
 	return &generator
 }
 
-func startIdGenCoroutine(domain int8, ch chan int64, serverId int8) {
-	timestamp := time.Now().Unix()
-	for {
-
-	}
+func (g *IdGenerator) GenerateSingleId(domain int8) int64 {
+	return <-g.GenerateId(domain, 1)
 }
 
-func (*IdGenerator) GenerateId(domain int8) int64 {
-	params := idParams{
-		timestamp: time.Now(),
-		counter:   1,
-		serverId:  5,
-		domain:    domain,
+func (g *IdGenerator) GenerateId(domain int8, count int) chan int64 {
+	result := make(chan int64)
+	request := IdGenerationRequest{
+		count:    count,
+		resultCh: result,
 	}
-	return generateIdForParams(params)
+	worker := g.domainWorkers[domain]
+	worker.ch <- request
+	return result
+}
+
+func (this *idGeneratorGoroutine) start() {
+	timestamp := time.Now()
+	for request := range this.ch {
+		for i := 0; i < request.count; i++ {
+			params := idParams{
+				timestamp: timestamp,
+				counter:   0,
+				serverId:  this.serverId,
+				domain:    this.domain,
+			}
+			id := generateIdForParams(params)
+			request.resultCh <- id
+		}
+		close(request.resultCh)
+	}
 }
 
 func generateIdForParams(params idParams) int64 {

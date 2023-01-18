@@ -62,5 +62,19 @@ func TestTimestampLifetime(t *testing.T) {
 }
 
 func TestNewIdGenerator(t *testing.T) {
-	NewIdGenerator(3)
+	serverId := int8(3)
+	domainId := int8(8)
+	generator := NewIdGenerator(serverId)
+	id := generator.GenerateSingleId(domainId)
+
+	params := parseIdToParams(id)
+	if params.domain != domainId {
+		t.Errorf("Generated id domain is %v, expected %v", params.domain, domainId)
+	}
+	if params.serverId != serverId {
+		t.Errorf("Generated id serverId is %v, expected %v", params.serverId, serverId)
+	}
+	if !params.timestamp.Before(time.Now()) {
+		t.Errorf("Generated id timestamp %v is in future", params.timestamp)
+	}
 }
