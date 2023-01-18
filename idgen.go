@@ -18,18 +18,6 @@ type IdGenerator struct {
 	wg            *sync.WaitGroup
 }
 
-type domainWorker struct {
-	ch       chan IdGenerationRequest
-	domain   uint8
-	serverId uint8
-	wg       *sync.WaitGroup
-}
-
-type IdGenerationRequest struct {
-	count    int
-	resultCh chan int64
-}
-
 func NewIdGenerator(serverId uint8) *IdGenerator {
 	wg := sync.WaitGroup{}
 	generator := IdGenerator{
@@ -39,7 +27,7 @@ func NewIdGenerator(serverId uint8) *IdGenerator {
 	for i := 0; i < domainCount; i++ {
 		println("Starting counter goroutine for domain", i)
 		goroutine := domainWorker{
-			ch:       make(chan IdGenerationRequest),
+			ch:       make(chan idGenerationRequest),
 			domain:   uint8(i),
 			serverId: serverId,
 			wg:       &wg,
@@ -50,19 +38,41 @@ func NewIdGenerator(serverId uint8) *IdGenerator {
 	return &generator
 }
 
-func (g *IdGenerator) GenerateSingleId(domain uint8) int64 {
-	return <-g.GenerateId(domain, 1)
-}
-
 func (g *IdGenerator) GenerateId(domain uint8, count int) chan int64 {
 	result := make(chan int64)
-	request := IdGenerationRequest{
+	request := idGenerationRequest{
 		count:    count,
 		resultCh: result,
 	}
 	worker := g.domainWorkers[domain]
 	worker.ch <- request
 	return result
+}
+
+func (g *IdGenerator) GenerateSingleId(domain uint8) int64 {
+	return <-g.GenerateId(domain, 1)
+}
+
+func (g *IdGenerator) Shutdown() {
+	for _, worker := range g.domainWorkers {
+		close(worker.ch)
+	}
+	g.wg.Wait()
+	log.Printf("All domains worker finished")
+}
+
+// ---------- Domain worker goroutines implementation ----------
+
+type idGenerationRequest struct {
+	count    int
+	resultCh chan int64
+}
+
+type domainWorker struct {
+	ch       chan idGenerationRequest
+	domain   uint8
+	serverId uint8
+	wg       *sync.WaitGroup
 }
 
 func (w *domainWorker) start() {
@@ -86,12 +96,13 @@ func (w *domainWorker) start() {
 	w.wg.Done()
 }
 
-func (g *IdGenerator) shutdown() {
-	for _, worker := range g.domainWorkers {
-		close(worker.ch)
-	}
-	g.wg.Wait()
-	log.Printf("All domains worker finished")
+// ---------- ID generation internals ----------
+
+type idParams struct {
+	timestamp time.Time
+	counter   uint16
+	serverId  uint8
+	domain    uint8
 }
 
 func generateIdForParams(params idParams) int64 {
@@ -129,11 +140,4 @@ func extractPart(id int64, bits int) (extracted int64, remainingId int64) {
 	extracted = id & mask
 	remainingId = id >> bits
 	return
-}
-
-type idParams struct {
-	timestamp time.Time
-	counter   uint16
-	serverId  uint8
-	domain    uint8
 }
