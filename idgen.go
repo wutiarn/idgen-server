@@ -12,16 +12,26 @@ const serverIdBits = 6
 const domainBits = 8
 
 type IdGenerator struct {
-	serverId       int8
 	domainCounters []chan int64
 }
 
 func NewIdGenerator(serverId int8) *IdGenerator {
+	generator := IdGenerator{}
 	domainCount := int(math.Pow(2, domainBits))
 	for i := 0; i < domainCount; i++ {
 		println("Starting counter goroutine for domain", i)
+		ch := make(chan int64)
+		go startIdGenCoroutine(int8(i), ch, serverId)
+		generator.domainCounters = append(generator.domainCounters, ch)
 	}
-	return &IdGenerator{}
+	return &generator
+}
+
+func startIdGenCoroutine(domain int8, ch chan int64, serverId int8) {
+	timestamp := time.Now().Unix()
+	for {
+
+	}
 }
 
 func (*IdGenerator) GenerateId(domain int8) int64 {
