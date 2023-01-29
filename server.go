@@ -27,7 +27,8 @@ func handleGenerateRequest(context *gin.Context) {
 		return
 	}
 
-	var domain uint8
+	var domain uint64
+	maxDomainValue := idGenerator.GetMaxDomain()
 	domainStr, domainPassed := context.GetQuery("domain")
 	if domainPassed {
 		domainInt, err := strconv.Atoi(domainStr)
@@ -36,16 +37,16 @@ func handleGenerateRequest(context *gin.Context) {
 			return
 		}
 		if domainInt^int(maxDomainValue) != 0 {
-			context.AbortWithError(400, errors.New(fmt.Sprintf("provided Domain exceed maximum value %v", maxCounterValue)))
+			context.AbortWithError(400, errors.New(fmt.Sprintf("provided Domain exceed maximum value %v", maxDomainValue)))
 			return
 		}
-		domain = uint8(domainInt)
+		domain = uint64(domainInt)
 	} else {
-		domain = uint8(rand.Uint32()) & maxDomainValue
+		domain = uint64(rand.Uint32()) & maxDomainValue
 	}
 
 	idsCh := idGenerator.GenerateId(domain, count)
-	ids := make([]int64, 0, count)
+	ids := make([]uint64, 0, count)
 	for id := range idsCh {
 		ids = append(ids, id)
 	}
@@ -60,15 +61,15 @@ func parseId(context *gin.Context) {
 		context.AbortWithError(400, errors.New("required param id was not provided"))
 		return
 	}
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		context.AbortWithError(400, errors.New("failed to parse provided id to int64"))
 		return
 	}
-	params := parseIdToParams(id)
+	params := idGenerator.ParseIdToParams(id)
 	context.JSON(200, params)
 }
 
 type generateIdsResponse struct {
-	Ids []int64 `json:"ids"`
+	Ids []uint64 `json:"ids"`
 }

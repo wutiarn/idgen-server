@@ -2,17 +2,16 @@ package main
 
 import (
 	"github.com/ilyakaznacheev/cleanenv"
+	"idgen-server/idgen"
 )
 
 //goland:noinspection GoVetStructTag
 type AppConfig struct {
-	NodeId uint8 `env:"NODE_ID" env-required`
+	IdGen idgen.Config
 }
 
 func GetConfig() *AppConfig {
-	config := AppConfig{
-		NodeId: 1,
-	}
+	config := AppConfig{}
 	err := cleanenv.ReadEnv(&config)
 	if err != nil {
 		panic(err)

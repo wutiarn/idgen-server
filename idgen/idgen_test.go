@@ -1,32 +1,46 @@
-package main
+package idgen
 
 import (
-	"math"
+	"go.uber.org/zap"
 	"sync"
 	"testing"
 	"time"
 )
 
+var config = Config{
+	InstanceId:           3,
+	TimestampBits:        35,
+	DomainBits:           8,
+	CounterBits:          14,
+	InstanceIdBits:       6,
+	EpochStartSecond:     1672531200,
+	ReservedSecondsCount: 60,
+	StartupSecondOffset:  0,
+}
+
+var confWrapper, _ = newConfigWrapper(config)
+var logger, _ = zap.NewDevelopment()
+
 func TestGenerateId(t *testing.T) {
 	params := IdParams{
-		Timestamp: time.Unix(1673989769, 0),
-		Counter:   1,
-		ServerId:  5,
-		Domain:    9,
+		Timestamp:  time.Unix(1673989769, 0),
+		Counter:    1,
+		InstanceId: 5,
+		Domain:     9,
 	}
 
-	var id int64 = 0
+	var id uint64 = 0
 
 	t.Run("Generate", func(t *testing.T) {
-		id = generateIdForParams(params)
-		var expected int64 = 391531634640137
+		id = generateIdForParams(params, confWrapper)
+		var expected uint64 = 391531634640137
 		if id != expected {
 			t.Errorf("generateIdForParams returned %v, expected %v", id, expected)
 		}
 	})
 
 	t.Run("Parse", func(t *testing.T) {
-		parsedParams := parseIdToParams(id)
+		parsedParams := parseIdToParams(id, confWrapper)
 		if parsedParams != params {
 			t.Errorf("parseIdToParams returned %v, expected %v", parsedParams, params)
 		}
@@ -34,17 +48,17 @@ func TestGenerateId(t *testing.T) {
 
 	t.Run("Generate Timestamp overflow", func(t *testing.T) {
 		modifiedParams := params
-		overflowValue := int64(10)
-		timestamp := int64(math.Pow(2, 35)) + epochStart + overflowValue
+		overflowValue := uint64(10)
+		timestamp := confWrapper.maxTimestamp + 1 + config.EpochStartSecond + overflowValue
 		modifiedParams.Timestamp = time.Unix(int64(timestamp), 0)
-		generated := generateIdForParams(modifiedParams)
-		var expected int64 = 2684372233
+		generated := generateIdForParams(modifiedParams, confWrapper)
+		var expected uint64 = 2684372233
 		if generated != expected {
 			t.Errorf("generateIdForParams returned %v, expected %v", generated, expected)
 		}
 
-		parsedParams := parseIdToParams(generated)
-		modifiedParams.Timestamp = time.Unix(int64(overflowValue+epochStart), 0)
+		parsedParams := parseIdToParams(generated, confWrapper)
+		modifiedParams.Timestamp = time.Unix(int64(overflowValue+config.EpochStartSecond), 0)
 		if parsedParams != modifiedParams {
 			t.Errorf("parseIdToParams returned %v, expected %v", parsedParams, modifiedParams)
 		}
@@ -52,28 +66,31 @@ func TestGenerateId(t *testing.T) {
 }
 
 func TestTimestampLifetime(t *testing.T) {
-	start := epochStart
-	end := epochStart + int64(math.Pow(2, timestampBits)-1)
+	start := config.EpochStartSecond
+	end := config.EpochStartSecond + confWrapper.maxTimestamp
 	duration := end - start
 	years := duration / 60 / 60 / 24 / 365
-	yearsThreshold := int64(1000)
+	yearsThreshold := uint64(1000)
 	if years < yearsThreshold {
 		t.Errorf("token lifespan is %v years, which is less than %v years threshold", years, yearsThreshold)
 	}
 }
 
 func TestNewIdGenerator(t *testing.T) {
-	serverId := uint8(3)
-	domainId := uint8(8)
-	generator := NewIdGenerator(serverId)
+	domainId := uint64(8)
+	generator, err := NewIdGenerator(config, logger)
+	if err != nil {
+		t.Errorf("Failed to initiate IdGenerator: %e", err)
+		return
+	}
 	id := generator.GenerateSingleId(domainId)
 
-	params := parseIdToParams(id)
+	params := parseIdToParams(id, confWrapper)
 	if params.Domain != domainId {
 		t.Errorf("Generated id Domain is %v, expected %v", params.Domain, domainId)
 	}
-	if params.ServerId != serverId {
-		t.Errorf("Generated id ServerId is %v, expected %v", params.ServerId, serverId)
+	if params.InstanceId != config.InstanceId {
+		t.Errorf("Generated id ServerId is %v, expected %v", params.InstanceId, config.InstanceId)
 	}
 	if !params.Timestamp.Before(time.Now()) {
 		t.Errorf("Generated id Timestamp %v is in future", params.Timestamp)
@@ -85,9 +102,10 @@ func TestNewIdGenerator(t *testing.T) {
 func TestIncrementCounter(t *testing.T) {
 	startTime := time.Now()
 	worker := domainWorker{
+		logger:           logger,
+		configWrapper:    confWrapper,
 		ch:               make(chan idGenerationRequest),
-		domain:           uint8(3),
-		serverId:         5,
+		domain:           3,
 		currentTimestamp: startTime,
 		counter:          0,
 		wg:               &sync.WaitGroup{},
@@ -109,7 +127,7 @@ func TestIncrementCounter(t *testing.T) {
 	t.Run("Sleep until next second", func(t *testing.T) {
 		worker.currentTimestamp = time.Now()
 		startTimestamp := worker.currentTimestamp
-		worker.counter = maxCounterValue
+		worker.counter = confWrapper.maxCounterValue
 		worker.incrementCounter()
 
 		timeDelta := worker.currentTimestamp.Unix() - startTimestamp.Unix()
@@ -123,18 +141,18 @@ func TestIncrementCounter(t *testing.T) {
 	})
 
 	t.Run("Increment to max timedelta", func(t *testing.T) {
-		now := time.Now().Unix()
-		worker.currentTimestamp = time.Unix(now-(reservedSeconds*3), 0)
+		now := uint64(time.Now().Unix())
+		worker.currentTimestamp = time.Unix(int64(now-(config.ReservedSecondsCount*3)), 0)
 		startTimestamp := worker.currentTimestamp
 		worker.incrementCounter()
 
 		timeDelta := worker.currentTimestamp.Unix() - startTimestamp.Unix()
-		if timeDelta < reservedSeconds*1.9 {
+		if timeDelta < int64(float64(config.ReservedSecondsCount)*1.9) {
 			t.Errorf("Incorrect time delta with start Timestamp: %v", timeDelta)
 		}
 
-		timeDelta = now - worker.currentTimestamp.Unix()
-		if timeDelta > reservedSeconds || timeDelta < reservedSeconds*0.5 {
+		timeDelta = int64(now - uint64(worker.currentTimestamp.Unix()))
+		if timeDelta > int64(config.ReservedSecondsCount) || timeDelta < int64(float64(config.ReservedSecondsCount)*0.5) {
 			t.Errorf("Incorrect time delta with now: %v", timeDelta)
 		}
 
