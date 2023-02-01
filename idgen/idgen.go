@@ -21,6 +21,7 @@ func NewIdGenerator(config Config, logger *zap.Logger) (*IdGenerator, error) {
 	}
 	wg := sync.WaitGroup{}
 	domainCount := configWrapper.maxDomain + 1
+	startTimestamp := time.Now().Add(time.Second * time.Duration(config.StartupSecondOffset))
 	generator := IdGenerator{
 		logger:        logger,
 		configWrapper: configWrapper,
@@ -34,7 +35,7 @@ func NewIdGenerator(config Config, logger *zap.Logger) (*IdGenerator, error) {
 			configWrapper:    configWrapper,
 			ch:               make(chan idGenerationRequest, 100),
 			domain:           i,
-			currentTimestamp: time.Now(),
+			currentTimestamp: startTimestamp,
 			counter:          0,
 			wg:               &wg,
 		}

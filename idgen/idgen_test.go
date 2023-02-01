@@ -161,3 +161,20 @@ func TestIncrementCounter(t *testing.T) {
 		}
 	})
 }
+
+func TestStartupSecondOffset(t *testing.T) {
+	var cfg = config
+	cfg.StartupSecondOffset = -1000
+	cfg.ReservedSecondsCount = 2000
+	generator, err := NewIdGenerator(cfg, logger)
+	if err != nil {
+		t.Errorf("Failed to initializa IdGenerator: %e", err)
+	}
+	worker := generator.domainWorkers[0]
+	worker.incrementCounter()
+	timestamp := worker.currentTimestamp
+	delta := time.Now().Sub(timestamp)
+	if delta < time.Second*999 || delta > time.Second*2000 {
+		t.Errorf("Unexpected timestamp delta: %v", delta.Seconds())
+	}
+}
