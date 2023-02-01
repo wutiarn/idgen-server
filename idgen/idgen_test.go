@@ -144,7 +144,7 @@ func TestIncrementCounter(t *testing.T) {
 		now := uint64(time.Now().Unix())
 		worker.currentTimestamp = time.Unix(int64(now-(config.ReservedSecondsCount*3)), 0)
 		startTimestamp := worker.currentTimestamp
-		worker.incrementCounter()
+		worker.updateTimestamp()
 
 		timeDelta := worker.currentTimestamp.Unix() - startTimestamp.Unix()
 		if timeDelta < int64(float64(config.ReservedSecondsCount)*1.9) {

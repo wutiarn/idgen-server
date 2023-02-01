@@ -119,6 +119,7 @@ type domainWorker struct {
 func (w *domainWorker) start() {
 	w.wg.Add(1)
 	for request := range w.ch {
+		w.updateTimestamp()
 		for i := 0; i < request.count; i++ {
 			w.incrementCounter()
 			params := IdParams{
@@ -135,7 +136,7 @@ func (w *domainWorker) start() {
 	w.wg.Done()
 }
 
-func (w *domainWorker) incrementCounter() {
+func (w *domainWorker) updateTimestamp() {
 	timeDelta := time.Now().Unix() - w.currentTimestamp.Unix()
 	reservedSecondsCount := int64(w.configWrapper.config.ReservedSecondsCount)
 	if timeDelta > reservedSecondsCount {
@@ -145,7 +146,6 @@ func (w *domainWorker) incrementCounter() {
 	}
 
 	if w.counter < w.configWrapper.maxCounterValue {
-		w.counter++
 		return
 	}
 
@@ -162,6 +162,15 @@ func (w *domainWorker) incrementCounter() {
 	time.Sleep(waitDuration)
 	w.currentTimestamp = w.currentTimestamp.Add(time.Second)
 	w.counter = 0
+}
+
+func (w *domainWorker) incrementCounter() {
+	if w.counter >= w.configWrapper.maxCounterValue {
+		w.updateTimestamp()
+		return
+	}
+
+	w.counter++
 }
 
 // ---------- ID generation internals ----------
