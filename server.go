@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"idgen-server/idgen"
+	"math/rand"
 	"strconv"
 	"strings"
 )
@@ -46,10 +47,8 @@ func handleGenerateRequest(context *gin.Context) {
 			domains = append(domains, domainInt)
 		}
 	} else {
-		var i uint64
-		for i = 0; i <= idGenerator.GetMaxDomain(); i++ {
-			domains = append(domains, i)
-		}
+		domain := uint64(rand.Uint32()) & maxDomainValue
+		domains = append(domains, domain)
 	}
 
 	generated := idGenerator.GenerateIds(domains, count)
