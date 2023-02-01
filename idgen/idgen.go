@@ -131,9 +131,6 @@ func (w *domainWorker) start() {
 			request.resultCh <- id
 		}
 		close(request.resultCh)
-		w.logger.Debug("ID generation request completed",
-			zap.Int("requestCount", request.count),
-			zap.Uint64("Domain", w.domain))
 	}
 	w.wg.Done()
 }
