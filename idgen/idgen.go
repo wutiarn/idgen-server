@@ -142,6 +142,9 @@ func (w *domainWorker) updateTimestamp() {
 	if timeDelta > reservedSecondsCount {
 		w.currentTimestamp = time.Unix(time.Now().Unix()-reservedSecondsCount, 0)
 		w.counter = 0
+		w.logger.Debug("Using earliest reserve second",
+			zap.Time("timestamp", w.currentTimestamp),
+			zap.Uint64("domain", w.domain))
 		return
 	}
 
@@ -152,16 +155,24 @@ func (w *domainWorker) updateTimestamp() {
 	if timeDelta > 0 {
 		w.currentTimestamp = w.currentTimestamp.Add(time.Second)
 		w.counter = 0
+
+		w.logger.Debug("Using next reserve second",
+			zap.Int64("left", timeDelta-1),
+			zap.Time("timestamp", w.currentTimestamp),
+			zap.Uint64("domain", w.domain))
 		return
 	}
 
 	waitDuration := time.Until(w.currentTimestamp.Add(time.Second))
-	w.logger.Warn("Sleeping until next second",
+	w.logger.Info("Sleeping until next second",
 		zap.Duration("duration", waitDuration),
 		zap.Uint64("Domain", w.domain))
 	time.Sleep(waitDuration)
 	w.currentTimestamp = w.currentTimestamp.Add(time.Second)
 	w.counter = 0
+	w.logger.Debug("Using realtime second",
+		zap.Time("timestamp", w.currentTimestamp),
+		zap.Uint64("domain", w.domain))
 }
 
 func (w *domainWorker) incrementCounter() {
