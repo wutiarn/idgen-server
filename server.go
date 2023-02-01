@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"idgen-server/idgen"
 	"strconv"
+	"strings"
 )
 
 func runServer() {
@@ -31,16 +32,19 @@ func handleGenerateRequest(context *gin.Context) {
 	domainsStr, domainPassed := context.GetQuery("domains")
 	var domains []uint64
 	if domainPassed {
-		domainInt, err := strconv.Atoi(domainsStr)
-		if err != nil {
-			context.AbortWithError(400, err)
-			return
+		domainStrs := strings.Split(domainsStr, ",")
+		for _, domainStr := range domainStrs {
+			domainInt, err := strconv.ParseUint(domainStr, 10, 64)
+			if err != nil {
+				context.AbortWithError(400, err)
+				return
+			}
+			if domainInt > maxDomainValue {
+				context.AbortWithError(400, errors.New(fmt.Sprintf("provided domain %v exceed maximum value %v", domainInt, maxDomainValue)))
+				return
+			}
+			domains = append(domains, domainInt)
 		}
-		if domainInt^int(maxDomainValue) != 0 {
-			context.AbortWithError(400, errors.New(fmt.Sprintf("provided Domain exceed maximum value %v", maxDomainValue)))
-			return
-		}
-		domains = append(domains, uint64(domainInt))
 	} else {
 		var i uint64
 		for i = 0; i <= idGenerator.GetMaxDomain(); i++ {
