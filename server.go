@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"math/rand"
+	"idgen-server/idgen"
 	"strconv"
 )
 
@@ -27,11 +27,11 @@ func handleGenerateRequest(context *gin.Context) {
 		return
 	}
 
-	var domain uint64
 	maxDomainValue := idGenerator.GetMaxDomain()
-	domainStr, domainPassed := context.GetQuery("domain")
+	domainsStr, domainPassed := context.GetQuery("domains")
+	var domains []uint64
 	if domainPassed {
-		domainInt, err := strconv.Atoi(domainStr)
+		domainInt, err := strconv.Atoi(domainsStr)
 		if err != nil {
 			context.AbortWithError(400, err)
 			return
@@ -40,17 +40,17 @@ func handleGenerateRequest(context *gin.Context) {
 			context.AbortWithError(400, errors.New(fmt.Sprintf("provided Domain exceed maximum value %v", maxDomainValue)))
 			return
 		}
-		domain = uint64(domainInt)
+		domains = append(domains, uint64(domainInt))
 	} else {
-		domain = uint64(rand.Uint32()) & maxDomainValue
+		var i uint64
+		for i = 0; i <= idGenerator.GetMaxDomain(); i++ {
+			domains = append(domains, i)
+		}
 	}
 
-	idsCh := idGenerator.GenerateId(domain, count)
-	ids := make([]uint64, 0, count)
-	for id := range idsCh {
-		ids = append(ids, id)
-	}
-	response := generateIdsResponse{Ids: ids}
+	generated := idGenerator.GenerateIds(domains, count)
+
+	response := generateIdsResponse{IdsByDomain: generated}
 	context.JSON(200, response)
 }
 
@@ -71,5 +71,5 @@ func parseId(context *gin.Context) {
 }
 
 type generateIdsResponse struct {
-	Ids []uint64 `json:"ids"`
+	IdsByDomain []idgen.GeneratedDomainIds `json:"ids_by_domain"`
 }

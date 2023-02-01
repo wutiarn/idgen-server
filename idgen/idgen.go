@@ -32,7 +32,7 @@ func NewIdGenerator(config Config, logger *zap.Logger) (*IdGenerator, error) {
 		goroutine := domainWorker{
 			logger:           logger,
 			configWrapper:    configWrapper,
-			ch:               make(chan idGenerationRequest),
+			ch:               make(chan idGenerationRequest, 100),
 			domain:           i,
 			currentTimestamp: time.Now(),
 			counter:          0,
@@ -46,8 +46,8 @@ func NewIdGenerator(config Config, logger *zap.Logger) (*IdGenerator, error) {
 	return &generator, nil
 }
 
-func (g *IdGenerator) GenerateId(domain uint64, count int) chan uint64 {
-	result := make(chan uint64)
+func (g *IdGenerator) GenerateIdsForDomain(domain uint64, count int) chan uint64 {
+	result := make(chan uint64, count)
 	request := idGenerationRequest{
 		count:    count,
 		resultCh: result,
@@ -57,8 +57,29 @@ func (g *IdGenerator) GenerateId(domain uint64, count int) chan uint64 {
 	return result
 }
 
+func (g *IdGenerator) GenerateIds(domains []uint64, count int) []GeneratedDomainIds {
+	channels := make([]chan uint64, 0, len(domains))
+	for _, domain := range domains {
+		ch := g.GenerateIdsForDomain(domain, count)
+		channels = append(channels, ch)
+	}
+	result := make([]GeneratedDomainIds, 0, len(domains))
+	for i, channel := range channels {
+		domain := domains[i]
+		domainResult := make([]uint64, 0, count)
+		for id := range channel {
+			domainResult = append(domainResult, id)
+		}
+		result = append(result, GeneratedDomainIds{
+			Domain: domain,
+			Ids:    domainResult,
+		})
+	}
+	return result
+}
+
 func (g *IdGenerator) GenerateSingleId(domain uint64) uint64 {
-	return <-g.GenerateId(domain, 1)
+	return <-g.GenerateIdsForDomain(domain, 1)
 }
 
 func (g *IdGenerator) Shutdown() {
@@ -189,4 +210,9 @@ func extractPart(id uint64, bits uint8) (extracted uint64, remainingId uint64) {
 	extracted = id & mask
 	remainingId = id >> bits
 	return
+}
+
+type GeneratedDomainIds struct {
+	Domain uint64   `json:"domain"`
+	Ids    []uint64 `json:"ids"`
 }
