@@ -8,14 +8,14 @@ import (
 
 //goland:noinspection GoVetStructTag
 type Config struct {
-	InstanceId           uint64 `env:"NODE_ID" env-required`
-	TimestampBits        uint8  `env-default:"35"`
-	DomainBits           uint8  `env-default:"8"`
-	CounterBits          uint8  `env-default:"14"`
-	InstanceIdBits       uint8  `env-default:"6"`
-	EpochStartSecond     uint64 `env-default:"1672531200"`
-	ReservedSecondsCount uint64 `env-default:"60"`
-	StartupSecondOffset  int64  `env-default:"0"`
+	InstanceId           uint64 `env:"NODE_ID" yaml:"instanceId" env-required`
+	TimestampBits        uint8  `env-default:"35" yaml:"timestampBits"`
+	DomainBits           uint8  `env-default:"8" yaml:"domainBits"`
+	CounterBits          uint8  `env-default:"14" yaml:"counterBits"`
+	InstanceIdBits       uint8  `env-default:"6" yaml:"instanceIdBits"`
+	EpochStartSecond     uint64 `env-default:"1672531200" yaml:"epochStartSecond"`
+	ReservedSecondsCount uint64 `env-default:"60" yaml:"reservedSecondsCount"`
+	StartupSecondOffset  int64  `env-default:"0" yaml:"startupSecondOffset"`
 }
 
 type configWrapper struct {
